@@ -2455,6 +2455,30 @@ navigator.serviceWorker?.getRegistrations?.().then(rs => {
 	}
 	</script>
 <script src="js/PageTransitions.js"></script>
+
+<style id="visitor-counter-style">
+  #visitor-counter {
+    position: fixed;
+    top: 112px;
+    right: 12px;
+    z-index: 80;
+    max-width: calc(100vw - 24px);
+    padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 10px;
+    background: rgba(6,12,22,.82);
+    color: #dbeafe;
+    font: 11px/1.35 system-ui, sans-serif;
+    text-align: right;
+    box-shadow: 0 5px 18px rgba(0,0,0,.28);
+  }
+  #visitor-counter a { color: #9bdcff; text-decoration: none; }
+  #visitor-counter a:hover { text-decoration: underline; }
+  @media (max-width: 520px) {
+    #visitor-counter { top: 108px; right: 8px; padding: 5px 7px; font-size: 10px; }
+  }
+</style>
+
 </head>
 <body>
 <!-- Replay viewer top bar: hidden during normal gameplay, revealed + wired by js/main.js in replayViewer mode. -->
@@ -3795,7 +3819,7 @@ document.getElementById('loading-status').textContent =
   'HTML TEST 20260621-B';
 </script>
 	         <script src="js/HudGrid.js?v=999974&cachebust=1"></script>
-      <script type="module" src="js/main.js?v=1000416&cachebust=1"></script>
+      <script type="module" src="js/main.js?v=1000417&cachebust=1"></script>
   <style>
     body {
       font-family: system-ui, -apple-system, Segoe UI, sans-serif;
@@ -4307,5 +4331,7 @@ document.getElementById('loading-status').textContent =
 </main>
 
 <script type="module" src="js/PageMusic.js"></script>
+
+
 </body>
 </html>
