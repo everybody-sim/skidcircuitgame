@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Skid Circuit — block thumbnail generator</title>
+<!--
+	Headless photo studio for editor palette thumbnails.
+	Renders every block at the editor's 3/4 (45°) camera angle on a
+	transparent background. Driven by tools/gen-block-thumbs.mjs which
+	calls window.renderThumb(id) and writes the PNG to
+	editor-assets/block-thumbs/<id>.png. Re-run after adding blocks.
+-->
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/"
+	}
+}
+</script>
+<style>
+	html, body { margin: 0; background: #222; }
+	#stage { width: 148px; height: 148px; }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const CELL = 9.99; // CELL_RAW — procedural shapes use editor ghost proportions
+
+// id -> { glb: 'models/<name>.glb' } | { proc: builderName }
+const SPEC = [
+	// ── ground roads ──────────────────────────────────────────────
+	{ id: 'track-straight', glb: 'track-straight' },
+	{ id: 'track-corner', glb: 'track-corner' },
+	{ id: 'track-gate', glb: 'track-finish' },               // checkpoint / start / finish all render the gate
+	{ id: 'track-checkpoint-corner', glb: 'track-checkpoint-corner' },
+	{ id: 'track-3-way', glb: 'track-3-way' },
+	{ id: 'track-4-way', glb: 'track-4-way' },
+	// ── narrow + choke ────────────────────────────────────────────
+	{ id: 'track-thin-straight', glb: 'track-thin-straight' },
+	{ id: 'track-thin-corner', glb: 'track-thin-corner' },
+	{ id: 'track-thin-3-way', glb: 'track-thin-3-way' },
+	{ id: 'track-thin-4-way', glb: 'track-thin-4-way' },
+	{ id: 'track-wide-thin', glb: 'track-wide-thin' },
+	{ id: 'track-choke-half', glb: 'track-choke-half' },
+	{ id: 'track-choke-both', glb: 'track-choke-both' },
+	{ id: 'track-choke-cross', glb: 'track-choke-cross' },
+	// ── elevated (level-select swap targets) ─────────────────────
+	{ id: 'elevated-straight', glb: 'elev-track-straight' },
+	{ id: 'elevated-corner', glb: 'elev-track-corner' },
+	{ id: 'elevated-gate', glb: 'elev-track-checkpoint' },
+	{ id: 'elevated-checkpoint-corner', glb: 'track-checkpoint-corner' },
+	{ id: 'elevated-3-way', glb: 'elev-track-3-way' },
+	{ id: 'elevated-4-way', glb: 'elev-track-4-way' },
+	{ id: 'elevated-cross', glb: 'elev-track-cross' },       // also pool-cross
+	{ id: 'elevated-cross-corner', glb: 'elev-cross-corners' },
+	{ id: 'elevated-slope', glb: 'elev-track-slope' },       // slope-up + pool-slope
+	{ id: 'elevated-thin-straight', glb: 'elev-thin-straight' },
+	{ id: 'elevated-thin-corner', glb: 'elev-thin-corner' },
+	{ id: 'elevated-thin-3-way', glb: 'elev-thin-3-way' },
+	{ id: 'elevated-thin-4-way', glb: 'elev-thin-4-way' },
+	{ id: 'elevated-wide-thin', glb: 'elev-wide-to-thin' },
+	{ id: 'elevated-choke-half', glb: 'elev-track-choke-half' },
+	{ id: 'elevated-choke-both', glb: 'elev-track-choke-both' },
+	{ id: 'elevated-choke-cross', glb: 'elev-choke-4-way' },
+	// ── pool & tunnel ─────────────────────────────────────────────
+	{ id: 'tunnel-hole', proc: 'tunnelHole' },
+	// ── obstacles ─────────────────────────────────────────────────
+	{ id: 'obstacle-bump', glb: 'track-bump' },
+	{ id: 'obstacle-pole', proc: 'pole' },
+	{ id: 'obstacle-cube', proc: 'cube' },
+	{ id: 'obstacle-wall', proc: 'wall' },
+	{ id: 'obstacle-jump', proc: 'jump' },
+	{ id: 'obstacle-water', proc: 'water' },
+	{ id: 'obstacle-magnet-blue', proc: 'magnetBlue' },
+	{ id: 'obstacle-magnet-red', proc: 'magnetRed' },
+	{ id: 'obstacle-magnet-grapple', proc: 'magnetGrapple' },
+	{ id: 'obstacle-arc-green', proc: 'arcGreen' },
+	{ id: 'obstacle-arc-orange', proc: 'arcOrange' },
+	{ id: 'obstacle-portal-yellow', proc: 'portalYellow' },
+	{ id: 'obstacle-portal-purple', proc: 'portalPurple' },
+	// ── moving ────────────────────────────────────────────────────
+	{ id: 'moving-slide', proc: 'movingSlide' },
+	{ id: 'moving-spin', proc: 'movingSpin' },
+	{ id: 'moving-orbit', proc: 'movingOrbit' },
+	{ id: 'moving-custom', proc: 'movingCustom' },
+	// ── decor ─────────────────────────────────────────────────────
+	{ id: 'deco-forest', glb: 'decoration-forest' },
+	{ id: 'deco-tents', glb: 'decoration-tents' },
+	{ id: 'deco-prop', glb: 'decoration-empty' },
+	{ id: 'deco-garage', glb: 'building-garage' },
+	{ id: 'deco-bldg-a', glb: 'building-small-a' },
+	{ id: 'deco-bldg-b', glb: 'building-small-b' },
+	{ id: 'deco-bldg-c', glb: 'building-small-c' },
+{ id: 'deco-bldg-d', glb: 'building-small-d' },
+	// ── category icons + custom pool ──────────────────────────────
+	{ id: 'obstacle-custom-pool', proc: 'customPool' },
+	{ id: 'cat-icon-surfaces', proc: 'surfaceIcon' },
+	{ id: 'cat-icon-tools', proc: 'hammer' },
+];
+
+const solid = ( color, opts = {} ) => new THREE.MeshStandardMaterial( {
+	color, roughness: 0.9, metalness: 0, flatShading: true, ...opts,
+} );
+
+const PROC = {
+	pole: () => new THREE.Mesh( new THREE.CylinderGeometry( CELL * 0.08, CELL * 0.08, CELL * 0.42, 16 ), solid( 0x8c8f96 ) ),
+	cube: () => new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.22, CELL * 0.22, CELL * 0.22 ), solid( 0x9da5b1 ) ),
+	wall: () => new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.62, CELL * 0.15, CELL * 0.08 ), solid( 0x868a90 ) ),
+	jump: () => {
+		const m = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.36, CELL * 0.18, CELL * 0.36 ), solid( 0x7f6a58 ) );
+		m.rotation.order = 'YXZ';
+		m.rotation.x = - THREE.MathUtils.degToRad( 30 );
+		return m;
+	},
+	water: () => {
+		const g = new THREE.Group();
+		const pool = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.9, CELL * 0.35, CELL * 0.9 ),
+			new THREE.MeshStandardMaterial( { color: 0x1fa8d6, roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.85 } ) );
+		g.add( pool );
+		const rimMat = solid( 0x5cc7ff );
+		for ( const [ w, d, x, z ] of [ [ CELL * 0.94, CELL * 0.06, 0, - CELL * 0.47 ], [ CELL * 0.94, CELL * 0.06, 0, CELL * 0.47 ], [ CELL * 0.06, CELL * 0.94, - CELL * 0.47, 0 ], [ CELL * 0.06, CELL * 0.94, CELL * 0.47, 0 ] ] ) {
+			const rim = new THREE.Mesh( new THREE.BoxGeometry( w, CELL * 0.4, d ), rimMat );
+			rim.position.set( x, 0, z );
+			g.add( rim );
+		}
+		return g;
+	},
+	magnetBlue: () => new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.22, CELL * 0.22, CELL * 0.22 ),
+		new THREE.MeshStandardMaterial( { color: 0x76abff, emissive: 0x1b45a9, emissiveIntensity: 0.55, roughness: 0.55, metalness: 0.22 } ) ),
+	magnetRed: () => new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.22, CELL * 0.22, CELL * 0.22 ),
+		new THREE.MeshStandardMaterial( { color: 0xff7777, emissive: 0x7a1111, emissiveIntensity: 0.55, roughness: 0.55, metalness: 0.22 } ) ),
+	magnetGrapple: () => new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.22, CELL * 0.22, CELL * 0.22 ),
+		new THREE.MeshStandardMaterial( { color: 0x7fe3d4, emissive: 0x0e5f54, emissiveIntensity: 0.55, roughness: 0.55, metalness: 0.22 } ) ),
+	arcGreen: () => new THREE.Mesh( new THREE.TorusGeometry( CELL * 0.34, CELL * 0.045, 10, 24, Math.PI * 0.85 ),
+		solid( 0x54e08a ) ),
+	arcOrange: () => new THREE.Mesh( new THREE.TorusGeometry( CELL * 0.34, CELL * 0.045, 10, 24, Math.PI * 0.85 ),
+		solid( 0xffa63d ) ),
+	portalYellow: () => new THREE.Mesh( new THREE.TorusGeometry( CELL * 0.32, CELL * 0.055, 12, 28 ),
+		new THREE.MeshStandardMaterial( { color: 0xffd54a, emissive: 0x8a6a00, emissiveIntensity: 0.5, roughness: 0.5, metalness: 0.15 } ) ),
+	portalPurple: () => new THREE.Mesh( new THREE.TorusGeometry( CELL * 0.32, CELL * 0.055, 12, 28 ),
+		new THREE.MeshStandardMaterial( { color: 0xb07fff, emissive: 0x3c1f7a, emissiveIntensity: 0.5, roughness: 0.5, metalness: 0.15 } ) ),
+	movingSlide: () => new THREE.Mesh( new THREE.BoxGeometry( 2.1, 1.2, 1.5 ), solid( 0x8ca0b8 ) ),
+	movingSpin: () => new THREE.Mesh( new THREE.BoxGeometry( 3.8, 0.8, 0.55 ), solid( 0xb4b8bf ) ),
+	movingOrbit: () => {
+		const g = new THREE.Group();
+		for ( let i = 0; i < 3; i++ ) {
+			const a = ( i / 3 ) * Math.PI * 2;
+			const p = new THREE.Mesh( new THREE.CylinderGeometry( 0.23, 0.23, 1.0, 12 ), solid( 0x979ea8 ) );
+			p.position.set( Math.cos( a ) * 1.1, 0, Math.sin( a ) * 1.1 );
+			g.add( p );
+		}
+		return g;
+	},
+	movingCustom: () => {
+		const g = new THREE.Group();
+		g.add( new THREE.Mesh( new THREE.BoxGeometry( 1.6, 0.9, 1.0 ), solid( 0x8ca0b8 ) ) );
+		const cyl = new THREE.Mesh( new THREE.CylinderGeometry( 0.2, 0.2, 1.0, 12 ), solid( 0xb4b8bf ) );
+		cyl.position.set( 1.1, 0, 0 );
+		g.add( cyl );
+		return g;
+	},
+	tunnelHole: () => {
+		const g = new THREE.Group();
+		g.add( new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.94, CELL * 0.1, CELL * 0.94 ), solid( 0x0b0f16 ) ) );
+		const rim = new THREE.Mesh( new THREE.BoxGeometry( CELL, CELL * 0.06, CELL ), solid( 0x3c4b60 ) );
+		rim.position.y = - 0.02;
+		g.add( rim );
+		return g;
+	},
+
+	customPool: () => {
+		const g = new THREE.Group();
+		const pool = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.9, CELL * 0.35, CELL * 0.9 ),
+			new THREE.MeshStandardMaterial( { color: 0x7fe3d4, roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.85 } ) );
+		g.add( pool );
+		const rimMat = solid( 0xb07fff );
+		for ( const [ w, d, x, z ] of [ [ CELL * 0.94, CELL * 0.06, 0, - CELL * 0.47 ], [ CELL * 0.94, CELL * 0.06, 0, CELL * 0.47 ], [ CELL * 0.06, CELL * 0.94, - CELL * 0.47, 0 ], [ CELL * 0.06, CELL * 0.94, CELL * 0.47, 0 ] ] ) {
+			const rim = new THREE.Mesh( new THREE.BoxGeometry( w, CELL * 0.4, d ), rimMat );
+			rim.position.set( x, 0, z );
+			g.add( rim );
+		}
+		return g;
+	},
+	surfaceIcon: () => {
+		const g = new THREE.Group();
+		const tile = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.95, CELL * 0.1, CELL * 0.95 ), solid( 0x54e08a ) );
+		g.add( tile );
+		const arrowMat = solid( 0xffffff );
+		for ( const [ x, ry ] of [ [ - CELL * 0.13, THREE.MathUtils.degToRad( 55 ) ], [ CELL * 0.13, THREE.MathUtils.degToRad( - 55 ) ] ] ) {
+			const part = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.42, CELL * 0.05, CELL * 0.12 ), arrowMat );
+			part.position.set( x, CELL * 0.08, 0 );
+			part.rotation.y = ry;
+			g.add( part );
+		}
+		return g;
+	},
+	hammer: () => {
+		const g = new THREE.Group();
+		const handle = new THREE.Mesh( new THREE.CylinderGeometry( CELL * 0.07, CELL * 0.07, CELL * 0.9, 12 ), solid( 0xb08968 ) );
+		handle.rotation.z = THREE.MathUtils.degToRad( 18 );
+		g.add( handle );
+		const head = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.5, CELL * 0.2, CELL * 0.2 ), solid( 0x9da5b1 ) );
+		head.position.set( - CELL * 0.18, CELL * 0.42, 0 );
+		g.add( head );
+		return g;
+	},
+};
+
+const canvas = document.getElementById( 'stage' );
+const renderer = new THREE.WebGLRenderer( { canvas, alpha: true, antialias: true, preserveDrawingBuffer: true } );
+renderer.setSize( 148, 148, false );
+renderer.setClearColor( 0x000000, 0 );
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera( 30, 1, 0.1, 500 );
+
+scene.add( new THREE.HemisphereLight( 0xffffff, 0x606878, 1.5 ) );
+const key = new THREE.DirectionalLight( 0xffffff, 1.6 );
+key.position.set( 18, 26, 14 );
+scene.add( key );
+const fill = new THREE.DirectionalLight( 0xdfeaff, 0.5 );
+fill.position.set( - 14, 8, - 10 );
+scene.add( fill );
+
+const loader = new GLTFLoader();
+const modelCache = new Map();
+
+function treatModelMaterials( name, scene3 ) {
+	// Same look-normalization the editor applies: no PBR glints,
+	// flat shading on the AI-authored thin/choke shells.
+	scene3.traverse( ( child ) => {
+		if ( ! child.isMesh ) return;
+		child.material.side = THREE.FrontSide;
+		( Array.isArray( child.material ) ? child.material : [ child.material ] ).forEach( ( m ) => {
+			if ( typeof m.metalness === 'number' ) m.metalness = 0;
+			if ( typeof m.roughness === 'number' ) m.roughness = 1;
+			if ( typeof m.envMapIntensity === 'number' ) m.envMapIntensity = 0;
+			if ( /thin|choke|cross-corner/.test( name ) && m.isMeshStandardMaterial ) {
+				m.flatShading = true;
+				m.needsUpdate = true;
+			}
+		} );
+	} );
+}
+
+async function getGlb( name ) {
+	if ( modelCache.has( name ) ) return modelCache.get( name ).clone( true );
+	const gltf = await new Promise( ( resolve, reject ) => loader.load( `/models/${ name }.glb`, resolve, undefined, reject ) );
+	treatModelMaterials( name, gltf.scene );
+	modelCache.set( name, gltf.scene );
+	return gltf.scene.clone( true );
+}
+
+async function buildObject( entry ) {
+	if ( entry.glb ) return getGlb( entry.glb );
+	const builder = PROC[ entry.proc ];
+	const obj = builder();
+	obj.rotation.y = THREE.MathUtils.degToRad( 25 ); // slight turn like placed blocks
+	return obj;
+}
+
+async function renderThumb( id ) {
+	const entry = SPEC.find( s => s.id === id );
+	if ( ! entry ) throw new Error( 'unknown thumb id: ' + id );
+	const obj = await buildObject( entry );
+	const holder = new THREE.Group();
+	holder.add( obj );
+	scene.add( holder );
+
+	// frame: 3/4 view from the editor's classic angle (45° around, ~35° up)
+	const bbox = new THREE.Box3().setFromObject( holder );
+	const size = bbox.getSize( new THREE.Vector3() );
+	const center = bbox.getCenter( new THREE.Vector3() );
+	const maxDim = Math.max( size.x, size.y, size.z );
+	const fit = maxDim * 1.0;
+	camera.position.set( center.x + fit, center.y + fit * 0.78, center.z + fit );
+	camera.lookAt( center );
+	renderer.render( scene, camera );
+	const url = renderer.domElement.toDataURL( 'image/png' );
+
+	scene.remove( holder );
+	return url;
+}
+
+window.__thumbIds = SPEC.map( s => s.id );
+window.renderThumb = renderThumb;
+window.__thumbsReady = true;
+</script>
+</body>
+</html>
