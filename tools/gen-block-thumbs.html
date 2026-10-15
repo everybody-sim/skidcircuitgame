@@ -96,7 +96,11 @@ const SPEC = [
 	{ id: 'deco-bldg-a', glb: 'building-small-a' },
 	{ id: 'deco-bldg-b', glb: 'building-small-b' },
 	{ id: 'deco-bldg-c', glb: 'building-small-c' },
-	{ id: 'deco-bldg-d', glb: 'building-small-d' },
+{ id: 'deco-bldg-d', glb: 'building-small-d' },
+	// ── category icons + custom pool ──────────────────────────────
+	{ id: 'obstacle-custom-pool', proc: 'customPool' },
+	{ id: 'cat-icon-surfaces', proc: 'surfaceIcon' },
+	{ id: 'cat-icon-tools', proc: 'hammer' },
 ];
 
 const solid = ( color, opts = {} ) => new THREE.MeshStandardMaterial( {
@@ -168,6 +172,43 @@ const PROC = {
 		g.add( rim );
 		return g;
 	},
+
+	customPool: () => {
+		const g = new THREE.Group();
+		const pool = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.9, CELL * 0.35, CELL * 0.9 ),
+			new THREE.MeshStandardMaterial( { color: 0x7fe3d4, roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.85 } ) );
+		g.add( pool );
+		const rimMat = solid( 0xb07fff );
+		for ( const [ w, d, x, z ] of [ [ CELL * 0.94, CELL * 0.06, 0, - CELL * 0.47 ], [ CELL * 0.94, CELL * 0.06, 0, CELL * 0.47 ], [ CELL * 0.06, CELL * 0.94, - CELL * 0.47, 0 ], [ CELL * 0.06, CELL * 0.94, CELL * 0.47, 0 ] ] ) {
+			const rim = new THREE.Mesh( new THREE.BoxGeometry( w, CELL * 0.4, d ), rimMat );
+			rim.position.set( x, 0, z );
+			g.add( rim );
+		}
+		return g;
+	},
+	surfaceIcon: () => {
+		const g = new THREE.Group();
+		const tile = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.95, CELL * 0.1, CELL * 0.95 ), solid( 0x54e08a ) );
+		g.add( tile );
+		const arrowMat = solid( 0xffffff );
+		for ( const [ x, ry ] of [ [ - CELL * 0.13, THREE.MathUtils.degToRad( 55 ) ], [ CELL * 0.13, THREE.MathUtils.degToRad( - 55 ) ] ] ) {
+			const part = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.42, CELL * 0.05, CELL * 0.12 ), arrowMat );
+			part.position.set( x, CELL * 0.08, 0 );
+			part.rotation.y = ry;
+			g.add( part );
+		}
+		return g;
+	},
+	hammer: () => {
+		const g = new THREE.Group();
+		const handle = new THREE.Mesh( new THREE.CylinderGeometry( CELL * 0.07, CELL * 0.07, CELL * 0.9, 12 ), solid( 0xb08968 ) );
+		handle.rotation.z = THREE.MathUtils.degToRad( 18 );
+		g.add( handle );
+		const head = new THREE.Mesh( new THREE.BoxGeometry( CELL * 0.5, CELL * 0.2, CELL * 0.2 ), solid( 0x9da5b1 ) );
+		head.position.set( - CELL * 0.18, CELL * 0.42, 0 );
+		g.add( head );
+		return g;
+	},
 };
 
 const canvas = document.getElementById( 'stage' );
@@ -236,7 +277,7 @@ async function renderThumb( id ) {
 	const size = bbox.getSize( new THREE.Vector3() );
 	const center = bbox.getCenter( new THREE.Vector3() );
 	const maxDim = Math.max( size.x, size.y, size.z );
-	const fit = maxDim * 0.62;
+	const fit = maxDim * 1.0;
 	camera.position.set( center.x + fit, center.y + fit * 0.78, center.z + fit );
 	camera.lookAt( center );
 	renderer.render( scene, camera );

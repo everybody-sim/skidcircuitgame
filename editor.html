@@ -160,20 +160,91 @@
 			white-space: nowrap;
 		}
 
-		/* ── reorganized palette: tools bar + block rows with photo tabs ── */
+		/* ── reorganized palette: category tabs + subcategory panels ── */
 		#toolbar {
 			flex-direction: column;
 			gap: 4px;
-			max-height: 78vh;
+			max-height: 76vh;
 			overflow-y: auto;
 		}
-		#tools-bar, #blocks-bar {
+		#palette-content {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 3px;
+		}
+		.palette-panel[hidden] { display: none; }
+		.palette-row {
 			display: flex;
 			flex-wrap: wrap;
 			justify-content: center;
 			align-items: flex-start;
-			gap: 2px;
+			gap: 3px;
 		}
+		.subcat-row {
+			display: flex;
+			justify-content: center;
+			gap: 3px;
+			width: 100%;
+			margin-bottom: 3px;
+		}
+		.subcat-chip {
+			padding: 2px 10px;
+			border: 1px solid rgba(255, 255, 255, 0.12);
+			border-radius: 999px;
+			background: rgba(26, 32, 46, 0.8);
+			color: rgba(255, 255, 255, 0.7);
+			font-size: 9px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.15s;
+		}
+		.subcat-chip:hover { background: rgba(46, 58, 82, 0.9); color: #fff; }
+		.subcat-chip.active { background: rgba(46, 204, 113, 0.25); border-color: rgba(80, 250, 123, 0.55); color: #fff; }
+		#cat-bar {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 3px;
+			padding-top: 3px;
+			border-top: 1px solid rgba(255, 255, 255, 0.08);
+		}
+		#cat-bar button.cat-tab {
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 2px;
+			padding: 4px 6px 3px;
+			min-width: 54px;
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 10px;
+			background: rgba(26, 32, 46, 0.8);
+			cursor: pointer;
+			transition: all 0.15s;
+		}
+		#cat-bar button.cat-tab img {
+			width: 34px;
+			height: 34px;
+			display: block;
+			pointer-events: none;
+			transition: all 0.15s;
+		}
+		#cat-bar button.cat-tab .cap {
+			font-size: 9px;
+			line-height: 1.1;
+			text-align: center;
+			max-width: 62px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		#cat-bar button.cat-tab:hover { background: rgba(46, 58, 82, 0.9); color: #fff; }
+		#cat-bar button.cat-tab.active { background: rgba(255, 255, 255, 0.18); border-color: rgba(140, 200, 255, 0.55); color: #fff; }
+		/* with a category open, the tabs below shrink to save space */
+		#toolbar[data-open] #cat-bar button.cat-tab { padding: 2px 4px; min-width: 0; }
+		#toolbar[data-open] #cat-bar button.cat-tab img { width: 22px; height: 22px; }
+		#toolbar[data-open] #cat-bar button.cat-tab .cap { display: none; }
 		#toolbar button.thumb {
 			position: relative;
 			display: flex;
@@ -651,19 +722,12 @@
 		</div>
 	</details>
 <div id="side-ui-bar">
-		<button id="btn-magnet-blue">Magnet Blue +</button>
-		<button id="btn-magnet-red">Magnet Red +</button>
-	<!--	<button id="btn-magnet-grapple">Grapple Orb +</button> -->
 		<button id="btn-magnet-up" title="Move the selected special block up by 0.1 grid">Special ▲</button>
 		<button id="btn-magnet-down" title="Move the selected special block down by 0.1 grid">Special ▼</button>
 		<button id="btn-magnet-strength-up" title="Increase selected magnet strength">Strength +</button>
 		<button id="btn-magnet-strength-down" title="Decrease selected magnet strength">Strength -</button>
 		<button id="btn-magnet-range-up" title="Increase selected magnet range">Range +</button>
 		<button id="btn-magnet-range-down" title="Decrease selected magnet range">Range -</button>
-		<button id="btn-arc-green" title="Green arc is the endpoint only (does not launch)">Arc End (Green) +</button>
-		<button id="btn-portal-yellow" title="Yellow portal is endpoint only (one-way, does not launch)">Portal End (Yellow) +</button>
-		<button id="btn-arc-orange" title="Orange arc is the launch/start point">Arc Start (Orange) +</button>
-		<button id="btn-portal-purple" title="Purple portal is the start point and keeps velocity">Portal Start (Purple) +</button>
 		<button id="btn-portal-up" title="Move selected arc/portal up by 0.1 grid">Arc/Portal ▲</button>
 		<button id="btn-portal-down" title="Move selected arc/portal down by 0.1 grid">Arc/Portal ▼</button>
 		<button id="btn-portal-id-down" title="Decrease selected arc/portal link id">Arc/Portal ID -</button>
@@ -700,139 +764,177 @@
 	</div>
 
 	<div id="toolbar">
-		<div id="tools-bar">
-			<div class="toolbar-group" aria-label="Edit tools" data-cat="edit">
-				<span class="toolbar-group-label">Tools</span>
-				<button id="btn-paint" class="active">Paint</button>
-				<button id="btn-erase">Erase</button>
-				<button id="btn-undo" title="Undo (Ctrl/Cmd+Z)" disabled>Undo</button>
-				<button id="btn-redo" title="Redo (Ctrl+Y or Cmd+Shift+Z)" disabled>Redo</button>
-				<button id="btn-flow">Flow: Off</button>
-				<button id="btn-offgrid">Snap: Grid</button>
-				<button id="btn-rotate">Rotate: 0°</button>
-			</div>
-			<div class="toolbar-group" aria-label="Testing and sharing" data-cat="run">
-				<span class="toolbar-group-label">Run</span>
-				<button id="btn-play" class="action">Play</button>
-				<button id="btn-quick-test" class="action">Quick Test</button>
-				<button id="btn-share" class="action">Share</button>
-				<button id="btn-clear" class="danger">Clear</button>
-				<button id="btn-storage-chip" type="button" title="Browser storage used by this site — click for details and cleanup">💾 <span id="storage-chip-text">…</span></button>
-			</div>
-		</div>
-		<div id="blocks-bar">
-			<div class="toolbar-group" aria-label="Road pieces" data-cat="track">
-				<span class="toolbar-group-label">Roads</span>
-				<select id="track-level-select" aria-label="Placement level" title="Placement level for the track buttons below">
-					<option value="ground">Ground</option>
-					<option value="elevated">Elevated</option>
-					<option value="tunnel-open">Tunnel (open top)</option>
-					<option value="tunnel-closed">Tunnel (closed top)</option>
-				</select>
+		<div id="palette-content">
+			<div class="palette-panel" data-panel="roads">
+				<div class="toolbar-group">
+					<div class="subcat-row">
+						<button class="subcat-chip active" data-level="ground">Ground</button>
+						<button class="subcat-chip" data-level="elevated">Elevated</button>
+						<button class="subcat-chip" data-level="tunnel-open">Tunnel Open</button>
+						<button class="subcat-chip" data-level="tunnel-closed">Tunnel Closed</button>
+					</div>
+					<div class="palette-row">
+			<button id="btn-gate-start-finish" class="thumb"><img src="editor-assets/block-thumbs/track-gate.png" alt="" draggable="false"><span class="cap">Start/Finish</span></button>
+			<button id="btn-gate-start" class="thumb"><img src="editor-assets/block-thumbs/track-gate.png" alt="" draggable="false"><span class="cap">Start</span></button>
+			<button id="btn-gate-finish" class="thumb"><img src="editor-assets/block-thumbs/track-gate.png" alt="" draggable="false"><span class="cap">Finish</span></button>
 			<button id="btn-straight" class="thumb active" data-thumb="track-straight" data-thumb-elev="elevated-straight"><span class="num">1</span><img src="editor-assets/block-thumbs/track-straight.png" alt="" draggable="false"><span class="cap">Straight</span></button>
-			<button id="btn-corner" class="thumb" data-thumb="track-corner" data-thumb-elev="elevated-corner"><span class="num">2</span><img src="editor-assets/block-thumbs/track-corner.png" alt="" draggable="false"><span class="cap">Corner</span></button>
-			<button id="btn-checkpoint" class="thumb" data-thumb="track-gate" data-thumb-elev="elevated-gate"><span class="num">3</span><img src="editor-assets/block-thumbs/track-gate.png" alt="" draggable="false"><span class="cap">Checkpoint</span></button>
-			<button id="btn-corner-checkpoint" class="thumb" data-thumb="track-checkpoint-corner" data-thumb-elev="track-checkpoint-corner"><span class="num">4</span><img src="editor-assets/block-thumbs/track-checkpoint-corner.png" alt="" draggable="false"><span class="cap">Corner CP</span></button>
-			<button id="btn-3way" class="thumb" data-thumb="track-3-way" data-thumb-elev="elevated-3-way"><span class="num">5</span><img src="editor-assets/block-thumbs/track-3-way.png" alt="" draggable="false"><span class="cap">3-Way</span></button>
-			<button id="btn-4way" class="thumb" data-thumb="track-4-way" data-thumb-elev="elevated-4-way"><span class="num">6</span><img src="editor-assets/block-thumbs/track-4-way.png" alt="" draggable="false"><span class="cap">4-Way</span></button>
-				<select id="gate-select" aria-label="Gate picker">
-					<option value="">Gate…</option>
-					<option value="track-start-finish">Start/Finish</option>
-					<option value="track-start">Place: Start</option>
-					<option value="track-finish">Place: Finish</option>
-				</select>
-				<button id="btn-elev-cross-extra" style="display:none">Elev Cross</button>
-				<button id="btn-elev-cross-corner-extra" style="display:none">Elev Cross Corner</button>
-				<button id="btn-slope-up" style="display:none">Slope Up</button>
+			<button id="btn-corner" class="thumb" data-thumb="track-corner"" data-thumb-elev="elevated-corner"><span class="num">2</span><img src="editor-assets/block-thumbs/track-corner.png" alt="" draggable="false"><span class="cap">Corner</span></button>
+			<button id="btn-checkpoint" class="thumb" data-thumb="track-gate"" data-thumb-elev="elevated-gate"><span class="num">3</span><img src="editor-assets/block-thumbs/track-gate.png" alt="" draggable="false"><span class="cap">Checkpoint</span></button>
+			<button id="btn-corner-checkpoint" class="thumb" data-thumb="track-checkpoint-corner"" data-thumb-elev="track-checkpoint-corner"><span class="num">4</span><img src="editor-assets/block-thumbs/track-checkpoint-corner.png" alt="" draggable="false"><span class="cap">Corner CP</span></button>
+			<button id="btn-3way" class="thumb" data-thumb="track-3-way"" data-thumb-elev="elevated-3-way"><span class="num">5</span><img src="editor-assets/block-thumbs/track-3-way.png" alt="" draggable="false"><span class="cap">3-Way</span></button>
+			<button id="btn-4way" class="thumb" data-thumb="track-4-way"" data-thumb-elev="elevated-4-way"><span class="num">6</span><img src="editor-assets/block-thumbs/track-4-way.png" alt="" draggable="false"><span class="cap">4-Way</span></button>
+			<button id="btn-thin-straight" class="thumb" data-thumb="track-thin-straight"" data-thumb-elev="elevated-thin-straight"><span class="num">7</span><img src="editor-assets/block-thumbs/track-thin-straight.png" alt="" draggable="false"><span class="cap">Thin Straight</span></button>
+			<button id="btn-thin-corner" class="thumb" data-thumb="track-thin-corner"" data-thumb-elev="elevated-thin-corner"><span class="num">8</span><img src="editor-assets/block-thumbs/track-thin-corner.png" alt="" draggable="false"><span class="cap">Thin Corner</span></button>
+			<button id="btn-thin-3way" class="thumb" data-thumb="track-thin-3-way"" data-thumb-elev="elevated-thin-3-way"><span class="num">9</span><img src="editor-assets/block-thumbs/track-thin-3-way.png" alt="" draggable="false"><span class="cap">Thin 3-Way</span></button>
+			<button id="btn-thin-4way" class="thumb" data-thumb="track-thin-4-way"" data-thumb-elev="elevated-thin-4-way"><span class="num">10</span><img src="editor-assets/block-thumbs/track-thin-4-way.png" alt="" draggable="false"><span class="cap">Thin 4-Way</span></button>
+			<button id="btn-wide-thin" class="thumb" data-thumb="track-wide-thin"" data-thumb-elev="elevated-wide-thin"><span class="num">11</span><img src="editor-assets/block-thumbs/track-wide-thin.png" alt="" draggable="false"><span class="cap">Wide-Thin</span></button>
+			<button id="btn-choke-half" class="thumb" data-thumb="track-choke-half"" data-thumb-elev="elevated-choke-half"><span class="num">12</span><img src="editor-assets/block-thumbs/track-choke-half.png" alt="" draggable="false"><span class="cap">Choke Half</span></button>
+			<button id="btn-choke-both" class="thumb" data-thumb="track-choke-both"" data-thumb-elev="elevated-choke-both"><span class="num">13</span><img src="editor-assets/block-thumbs/track-choke-both.png" alt="" draggable="false"><span class="cap">Choke Both</span></button>
+			<button id="btn-choke-cross" class="thumb" data-thumb="track-choke-cross"" data-thumb-elev="elevated-choke-cross"><span class="num">14</span><img src="editor-assets/block-thumbs/track-choke-cross.png" alt="" draggable="false"><span class="cap">Choke Cross</span></button>
+			<button id="btn-elev-cross-extra" class="thumb" data-thumb="elevated-cross"" style="display:none"><span class="num">15</span><img src="editor-assets/block-thumbs/elevated-cross.png" alt="" draggable="false"><span class="cap">Cross</span></button>
+			<button id="btn-elev-cross-corner-extra" class="thumb" data-thumb="elevated-cross-corner"" style="display:none"><span class="num">16</span><img src="editor-assets/block-thumbs/elevated-cross-corner.png" alt="" draggable="false"><span class="cap">Cross Corner</span></button>
+			<button id="btn-slope-up" class="thumb" data-thumb="elevated-slope"" style="display:none"><span class="num">17</span><img src="editor-assets/block-thumbs/elevated-slope.png" alt="" draggable="false"><span class="cap">Slope</span></button>
+			<button id="btn-pool-slope" class="thumb" data-thumb="elevated-slope"" style="display:none"><span class="num">18</span><img src="editor-assets/block-thumbs/elevated-slope.png" alt="" draggable="false"><span class="cap">Pool Slope</span></button>
+			<button id="btn-pool-cross" class="thumb" data-thumb="elevated-cross"" style="display:none"><span class="num">19</span><img src="editor-assets/block-thumbs/elevated-cross.png" alt="" draggable="false"><span class="cap">Pool Cross</span></button>
+			<button id="btn-tunnel-hole" class="thumb" data-thumb="tunnel-hole"" style="display:none"><span class="num">20</span><img src="editor-assets/block-thumbs/tunnel-hole.png" alt="" draggable="false"><span class="cap">Tunnel Hole</span></button>
+				</div>
+				</div>
 			</div>
-			<div class="toolbar-group" aria-label="Narrow and choke pieces" data-cat="narrow">
-				<span class="toolbar-group-label">Narrow & Choke</span>
-			<button id="btn-thin-straight" class="thumb" data-thumb="track-thin-straight" data-thumb-elev="elevated-thin-straight"><span class="num">1</span><img src="editor-assets/block-thumbs/track-thin-straight.png" alt="" draggable="false"><span class="cap">Thin Straight</span></button>
-			<button id="btn-thin-corner" class="thumb" data-thumb="track-thin-corner" data-thumb-elev="elevated-thin-corner"><span class="num">2</span><img src="editor-assets/block-thumbs/track-thin-corner.png" alt="" draggable="false"><span class="cap">Thin Corner</span></button>
-			<button id="btn-thin-3way" class="thumb" data-thumb="track-thin-3-way" data-thumb-elev="elevated-thin-3-way"><span class="num">3</span><img src="editor-assets/block-thumbs/track-thin-3-way.png" alt="" draggable="false"><span class="cap">Thin 3-Way</span></button>
-			<button id="btn-thin-4way" class="thumb" data-thumb="track-thin-4-way" data-thumb-elev="elevated-thin-4-way"><span class="num">4</span><img src="editor-assets/block-thumbs/track-thin-4-way.png" alt="" draggable="false"><span class="cap">Thin 4-Way</span></button>
-			<button id="btn-wide-thin" class="thumb" data-thumb="track-wide-thin" data-thumb-elev="elevated-wide-thin"><span class="num">5</span><img src="editor-assets/block-thumbs/track-wide-thin.png" alt="" draggable="false"><span class="cap">Wide-Thin</span></button>
-			<button id="btn-choke-half" class="thumb" data-thumb="track-choke-half" data-thumb-elev="elevated-choke-half"><span class="num">6</span><img src="editor-assets/block-thumbs/track-choke-half.png" alt="" draggable="false"><span class="cap">Choke Half</span></button>
-			<button id="btn-choke-both" class="thumb" data-thumb="track-choke-both" data-thumb-elev="elevated-choke-both"><span class="num">7</span><img src="editor-assets/block-thumbs/track-choke-both.png" alt="" draggable="false"><span class="cap">Choke Both</span></button>
-			<button id="btn-choke-cross" class="thumb" data-thumb="track-choke-cross" data-thumb-elev="elevated-choke-cross"><span class="num">8</span><img src="editor-assets/block-thumbs/track-choke-cross.png" alt="" draggable="false"><span class="cap">Choke Cross</span></button>
+			<div class="palette-panel" data-panel="obstacles" hidden>
+				<div class="toolbar-group">
+					<div class="palette-row">
+			<button id="btn-bump" class="thumb" data-thumb="obstacle-bump""><span class="num">1</span><img src="editor-assets/block-thumbs/obstacle-bump.png" alt="" draggable="false"><span class="cap">Bump +</span></button>
+			<button id="btn-pole" class="thumb" data-thumb="obstacle-pole""><span class="num">2</span><img src="editor-assets/block-thumbs/obstacle-pole.png" alt="" draggable="false"><span class="cap">Pole +</span></button>
+			<button id="btn-cube" class="thumb" data-thumb="obstacle-cube""><span class="num">3</span><img src="editor-assets/block-thumbs/obstacle-cube.png" alt="" draggable="false"><span class="cap">Cube +</span></button>
+			<button id="btn-wall" class="thumb" data-thumb="obstacle-wall""><span class="num">4</span><img src="editor-assets/block-thumbs/obstacle-wall.png" alt="" draggable="false"><span class="cap">Wall +</span></button>
+			<button id="btn-jump" class="thumb" data-thumb="obstacle-jump""><span class="num">5</span><img src="editor-assets/block-thumbs/obstacle-jump.png" alt="" draggable="false"><span class="cap">Jump +</span></button>
+			<button id="btn-water" class="thumb" data-thumb="obstacle-water""><span class="num">6</span><img src="editor-assets/block-thumbs/obstacle-water.png" alt="" draggable="false"><span class="cap">Water +</span></button>
+			<button id="btn-custom-pool" class="thumb" data-thumb="obstacle-custom-pool""><span class="num">7</span><img src="editor-assets/block-thumbs/obstacle-custom-pool.png" alt="" draggable="false"><span class="cap">Custom Pool</span></button>
+					</div>
+				</div>
 			</div>
-			<div class="toolbar-group" aria-label="Pool and tunnel pieces" data-cat="pool">
-				<span class="toolbar-group-label">Pool & Tunnel</span>
-			<button id="btn-pool-slope" class="thumb" data-thumb="elevated-slope" style="display:none"><span class="num">1</span><img src="editor-assets/block-thumbs/elevated-slope.png" alt="" draggable="false"><span class="cap">Pool Slope</span></button>
-			<button id="btn-pool-cross" class="thumb" data-thumb="elevated-cross" style="display:none"><span class="num">2</span><img src="editor-assets/block-thumbs/elevated-cross.png" alt="" draggable="false"><span class="cap">Pool Cross</span></button>
-			<button id="btn-tunnel-hole" class="thumb" data-thumb="tunnel-hole"><span class="num">3</span><img src="editor-assets/block-thumbs/tunnel-hole.png" alt="" draggable="false"><span class="cap">Tunnel Hole</span></button>
+			<div class="palette-panel" data-panel="moving" hidden>
+				<div class="toolbar-group">
+					<div class="palette-row">
+			<button id="btn-moving-slide" class="thumb" data-thumb="moving-slide""><span class="num">1</span><img src="editor-assets/block-thumbs/moving-slide.png" alt="" draggable="false"><span class="cap">Sliding Block +</span></button>
+			<button id="btn-moving-spin" class="thumb" data-thumb="moving-spin""><span class="num">2</span><img src="editor-assets/block-thumbs/moving-spin.png" alt="" draggable="false"><span class="cap">Spinning Wall +</span></button>
+			<button id="btn-moving-orbit" class="thumb" data-thumb="moving-orbit""><span class="num">3</span><img src="editor-assets/block-thumbs/moving-orbit.png" alt="" draggable="false"><span class="cap">Orbit Poles +</span></button>
+			<button id="btn-moving-custom" class="thumb" data-thumb="moving-custom""><span class="num">4</span><img src="editor-assets/block-thumbs/moving-custom.png" alt="" draggable="false"><span class="cap">Custom Mover +</span></button>
+					</div>
+				</div>
 			</div>
-			<div class="toolbar-group" aria-label="Obstacles" data-cat="obstacles">
-				<span class="toolbar-group-label">Obstacles</span>
-			<button id="btn-bump" class="thumb" data-thumb="obstacle-bump"><span class="num">1</span><img src="editor-assets/block-thumbs/obstacle-bump.png" alt="" draggable="false"><span class="cap">Bump +</span></button>
-			<button id="btn-pole" class="thumb" data-thumb="obstacle-pole"><span class="num">2</span><img src="editor-assets/block-thumbs/obstacle-pole.png" alt="" draggable="false"><span class="cap">Pole +</span></button>
-			<button id="btn-cube" class="thumb" data-thumb="obstacle-cube"><span class="num">3</span><img src="editor-assets/block-thumbs/obstacle-cube.png" alt="" draggable="false"><span class="cap">Cube +</span></button>
-			<button id="btn-wall" class="thumb" data-thumb="obstacle-wall"><span class="num">4</span><img src="editor-assets/block-thumbs/obstacle-wall.png" alt="" draggable="false"><span class="cap">Wall +</span></button>
-			<button id="btn-jump" class="thumb" data-thumb="obstacle-jump"><span class="num">5</span><img src="editor-assets/block-thumbs/obstacle-jump.png" alt="" draggable="false"><span class="cap">Jump +</span></button>
-			<button id="btn-water" class="thumb" data-thumb="obstacle-water"><span class="num">6</span><img src="editor-assets/block-thumbs/obstacle-water.png" alt="" draggable="false"><span class="cap">Water +</span></button>
-				<button id="btn-custom-pool" title="Opens custom pool settings"><input type="checkbox" id="cp-colors-toggle" aria-label="Enable custom pool colors"> Custom Pool</button>
+			<div class="palette-panel" data-panel="surfaces" hidden>
+				<div class="toolbar-group">
+					<div class="palette-row">
+						<select id="surface-select" aria-label="Surface picker">
+							<option value="">Surface…</option>
+							<option value="surface-wood">Wood</option>
+							<option value="surface-ice">Ice</option>
+							<option value="surface-boost">Boost Surface</option>
+							<option value="surface-sand">Sand</option>
+							<option value="surface-bounce">Bounce Plate</option>
+							<option value="surface-trampoline">Trampoline</option>
+							<option value="surface-kick-l">Kick Left</option>
+							<option value="surface-kick-r">Kick Right</option>
+						</select>
+						<select id="pad-select" aria-label="Pad picker">
+							<option value="">Pads…</option>
+							<option value="pad-reset">Reset Effects</option>
+							<option value="pad-low-gravity">Low Gravity</option>
+							<option value="pad-air-control">Air Control</option>
+							<option value="pad-heavy-gravity">Heavy Gravity</option>
+							<option value="pad-high-grip">High Grip</option>
+							<option value="pad-high-speed">High Speed</option>
+							<option value="pad-no-brakes">No Brakes</option>
+							<option value="pad-no-steering">No Steering</option>
+							<option value="pad-no-acceleration">No Acceleration (Slide)</option>
+							<option value="pad-slow-motion">Slow Motion</option>
+							<option value="pad-fast-motion">Fast Motion</option>
+							<option value="pad-drift">Drift Mode</option>
+							<option value="pad-size-small">Mini Pad (0.5×)</option>
+							<option value="pad-size-normal">Normal Pad (1.0×)</option>
+							<option value="pad-size-mega">Mega Pad (1.8×)</option>
+						</select>
+						<button id="btn-surface-custom-a">Custom A</button>
+						<button id="btn-surface-custom-b">Custom B</button>
+						<button id="btn-surface-custom-c">Custom C</button>
+						<button id="btn-pad-custom-a">Pad A</button>
+						<button id="btn-pad-custom-b">Pad B</button>
+						<button id="btn-pad-custom-c">Pad C</button>
+						<button id="btn-overlap-toggle">Overlap: Off</button>
+					</div>
+				</div>
 			</div>
-			<div class="toolbar-group" aria-label="Moving objects" data-cat="moving">
-				<span class="toolbar-group-label">Moving</span>
-			<button id="btn-moving-slide" class="thumb" data-thumb="moving-slide"><span class="num">1</span><img src="editor-assets/block-thumbs/moving-slide.png" alt="" draggable="false"><span class="cap">Sliding Block +</span></button>
-			<button id="btn-moving-spin" class="thumb" data-thumb="moving-spin"><span class="num">2</span><img src="editor-assets/block-thumbs/moving-spin.png" alt="" draggable="false"><span class="cap">Spinning Wall +</span></button>
-			<button id="btn-moving-orbit" class="thumb" data-thumb="moving-orbit"><span class="num">3</span><img src="editor-assets/block-thumbs/moving-orbit.png" alt="" draggable="false"><span class="cap">Orbit Poles +</span></button>
-			<button id="btn-moving-custom" class="thumb" data-thumb="moving-custom"><span class="num">4</span><img src="editor-assets/block-thumbs/moving-custom.png" alt="" draggable="false"><span class="cap">Custom Mover +</span></button>
+			<div class="palette-panel" data-panel="specials" hidden>
+				<div class="toolbar-group">
+					<div class="palette-row">
+			<button id="btn-magnet-blue" class="thumb" data-thumb="obstacle-magnet-blue""><span class="num">1</span><img src="editor-assets/block-thumbs/obstacle-magnet-blue.png" alt="" draggable="false"><span class="cap">Magnet Blue +</span></button>
+			<button id="btn-magnet-red" class="thumb" data-thumb="obstacle-magnet-red""><span class="num">2</span><img src="editor-assets/block-thumbs/obstacle-magnet-red.png" alt="" draggable="false"><span class="cap">Magnet Red +</span></button>
+			<button id="btn-arc-green" class="thumb" data-thumb="obstacle-arc-green""><span class="num">3</span><img src="editor-assets/block-thumbs/obstacle-arc-green.png" alt="" draggable="false"><span class="cap">Arc End +</span></button>
+			<button id="btn-arc-orange" class="thumb" data-thumb="obstacle-arc-orange""><span class="num">4</span><img src="editor-assets/block-thumbs/obstacle-arc-orange.png" alt="" draggable="false"><span class="cap">Arc Start +</span></button>
+			<button id="btn-portal-yellow" class="thumb" data-thumb="obstacle-portal-yellow""><span class="num">5</span><img src="editor-assets/block-thumbs/obstacle-portal-yellow.png" alt="" draggable="false"><span class="cap">Portal End +</span></button>
+			<button id="btn-portal-purple" class="thumb" data-thumb="obstacle-portal-purple""><span class="num">6</span><img src="editor-assets/block-thumbs/obstacle-portal-purple.png" alt="" draggable="false"><span class="cap">Portal Start +</span></button>
+					</div>
+				</div>
 			</div>
-			<div class="toolbar-group" aria-label="Surfaces and pads" data-cat="surfaces">
-				<span class="toolbar-group-label">Surfaces & Pads</span>
-				<select id="surface-select" aria-label="Surface picker">
-					<option value="">Surface…</option>
-					<option value="surface-wood">Wood</option>
-					<option value="surface-ice">Ice</option>
-					<option value="surface-boost">Boost Surface</option>
-					<option value="surface-sand">Sand</option>
-					<option value="surface-bounce">Bounce Plate</option>
-					<option value="surface-trampoline">Trampoline</option>
-					<option value="surface-kick-l">Kick Left</option>
-					<option value="surface-kick-r">Kick Right</option>
-				</select>
-				<select id="pad-select" aria-label="Pad picker">
-					<option value="">Pads…</option>
-					<option value="pad-reset">Reset Effects</option>
-					<option value="pad-low-gravity">Low Gravity</option>
-					<option value="pad-air-control">Air Control</option>
-					<option value="pad-heavy-gravity">Heavy Gravity</option>
-					<option value="pad-high-grip">High Grip</option>
-					<option value="pad-high-speed">High Speed</option>
-					<option value="pad-no-brakes">No Brakes</option>
-					<option value="pad-no-steering">No Steering</option>
-					<option value="pad-no-acceleration">No Acceleration (Slide)</option>
-					<option value="pad-slow-motion">Slow Motion</option>
-					<option value="pad-fast-motion">Fast Motion</option>
-					<option value="pad-drift">Drift Mode</option>
-					<option value="pad-size-small">Mini Pad (0.5×)</option>
-					<option value="pad-size-normal">Normal Pad (1.0×)</option>
-					<option value="pad-size-mega">Mega Pad (1.8×)</option>
-				</select>
-				<button id="btn-surface-custom-a">Custom A</button>
-				<button id="btn-surface-custom-b">Custom B</button>
-				<button id="btn-surface-custom-c">Custom C</button>
-				<button id="btn-pad-custom-a">Pad A</button>
-				<button id="btn-pad-custom-b">Pad B</button>
-				<button id="btn-pad-custom-c">Pad C</button>
-				<button id="btn-overlap-toggle">Overlap: Off</button>
+			<div class="palette-panel" data-panel="decor" hidden>
+				<div class="toolbar-group">
+					<div class="palette-row">
+			<button id="btn-deco-forest" class="thumb" data-thumb="deco-forest""><span class="num">1</span><img src="editor-assets/block-thumbs/deco-forest.png" alt="" draggable="false"><span class="cap">Tree</span></button>
+			<button id="btn-deco-tents" class="thumb" data-thumb="deco-tents""><span class="num">2</span><img src="editor-assets/block-thumbs/deco-tents.png" alt="" draggable="false"><span class="cap">Tent</span></button>
+			<button id="btn-deco-empty" class="thumb" data-thumb="deco-prop""><span class="num">3</span><img src="editor-assets/block-thumbs/deco-prop.png" alt="" draggable="false"><span class="cap">Prop</span></button>
+			<button id="btn-building-garage" class="thumb" data-thumb="deco-garage""><span class="num">4</span><img src="editor-assets/block-thumbs/deco-garage.png" alt="" draggable="false"><span class="cap">Garage</span></button>
+			<button id="btn-building-small-a" class="thumb" data-thumb="deco-bldg-a""><span class="num">5</span><img src="editor-assets/block-thumbs/deco-bldg-a.png" alt="" draggable="false"><span class="cap">Bldg A</span></button>
+			<button id="btn-building-small-b" class="thumb" data-thumb="deco-bldg-b""><span class="num">6</span><img src="editor-assets/block-thumbs/deco-bldg-b.png" alt="" draggable="false"><span class="cap">Bldg B</span></button>
+			<button id="btn-building-small-c" class="thumb" data-thumb="deco-bldg-c""><span class="num">7</span><img src="editor-assets/block-thumbs/deco-bldg-c.png" alt="" draggable="false"><span class="cap">Bldg C</span></button>
+			<button id="btn-building-small-d" class="thumb" data-thumb="deco-bldg-d""><span class="num">8</span><img src="editor-assets/block-thumbs/deco-bldg-d.png" alt="" draggable="false"><span class="cap">Bldg D</span></button>
+						<button id="btn-custom-import">Import 3D</button>
+						<button id="btn-custom-cycle">Custom: none</button>
+						<input id="custom-model-file" type="file" accept=".glb,.gltf,.obj,model/gltf-binary,model/gltf+json" style="display:none" />
+					</div>
+				</div>
 			</div>
-			<div class="toolbar-group" aria-label="Decor and custom imports" data-cat="decor">
-				<span class="toolbar-group-label">Decor</span>
-			<button id="btn-deco-forest" class="thumb" data-thumb="deco-forest"><span class="num">1</span><img src="editor-assets/block-thumbs/deco-forest.png" alt="" draggable="false"><span class="cap">Tree</span></button>
-			<button id="btn-deco-tents" class="thumb" data-thumb="deco-tents"><span class="num">2</span><img src="editor-assets/block-thumbs/deco-tents.png" alt="" draggable="false"><span class="cap">Tent</span></button>
-			<button id="btn-deco-empty" class="thumb" data-thumb="deco-prop"><span class="num">3</span><img src="editor-assets/block-thumbs/deco-prop.png" alt="" draggable="false"><span class="cap">Prop</span></button>
-			<button id="btn-building-garage" class="thumb" data-thumb="deco-garage"><span class="num">4</span><img src="editor-assets/block-thumbs/deco-garage.png" alt="" draggable="false"><span class="cap">Garage</span></button>
-			<button id="btn-building-small-a" class="thumb" data-thumb="deco-bldg-a"><span class="num">5</span><img src="editor-assets/block-thumbs/deco-bldg-a.png" alt="" draggable="false"><span class="cap">Bldg A</span></button>
-			<button id="btn-building-small-b" class="thumb" data-thumb="deco-bldg-b"><span class="num">6</span><img src="editor-assets/block-thumbs/deco-bldg-b.png" alt="" draggable="false"><span class="cap">Bldg B</span></button>
-			<button id="btn-building-small-c" class="thumb" data-thumb="deco-bldg-c"><span class="num">7</span><img src="editor-assets/block-thumbs/deco-bldg-c.png" alt="" draggable="false"><span class="cap">Bldg C</span></button>
-			<button id="btn-building-small-d" class="thumb" data-thumb="deco-bldg-d"><span class="num">8</span><img src="editor-assets/block-thumbs/deco-bldg-d.png" alt="" draggable="false"><span class="cap">Bldg D</span></button>
-				<button id="btn-custom-import">Import 3D</button>
-				<button id="btn-custom-cycle">Custom: none</button>
-				<input id="custom-model-file" type="file" accept=".glb,.gltf,.obj,model/gltf-binary,model/gltf+json" style="display:none" />
+			<div class="palette-panel" data-panel="tools" hidden>
+				<div class="toolbar-group">
+					<span class="toolbar-group-label">Tools</span>
+					<div class="palette-row">
+						<button id="btn-paint" class="active">Paint</button>
+						<button id="btn-erase">Erase</button>
+						<button id="btn-undo" title="Undo (Ctrl/Cmd+Z)" disabled>Undo</button>
+						<button id="btn-redo" title="Redo (Ctrl+Y or Cmd+Shift+Z)" disabled>Redo</button>
+						<button id="btn-flow">Flow: Off</button>
+						<button id="btn-offgrid">Snap: Grid</button>
+						<button id="btn-rotate">Rotate: 0°</button>
+						<button id="btn-play" class="action">Play</button>
+						<button id="btn-quick-test" class="action">Quick Test</button>
+						<button id="btn-share" class="action">Share</button>
+						<button id="btn-clear" class="danger">Clear</button>
+						<button id="btn-storage-chip" type="button" title="Browser storage used by this site — click for details and cleanup">💾 <span id="storage-chip-text">…</span></button>
+					</div>
+				</div>
 			</div>
 		</div>
+		<div id="cat-bar">
+			<button class="cat-tab" data-cat="roads"><img src="editor-assets/block-thumbs/track-straight.png" alt="" draggable="false"><span class="cap">Roads</span></button>
+			<button class="cat-tab" data-cat="obstacles"><img src="editor-assets/block-thumbs/obstacle-bump.png" alt="" draggable="false"><span class="cap">Obstacles</span></button>
+			<button class="cat-tab" data-cat="moving"><img src="editor-assets/block-thumbs/moving-spin.png" alt="" draggable="false"><span class="cap">Moving</span></button>
+			<button class="cat-tab" data-cat="surfaces"><img src="editor-assets/block-thumbs/cat-icon-surfaces.png" alt="" draggable="false"><span class="cap">Surfaces & Pads</span></button>
+			<button class="cat-tab" data-cat="specials"><img src="editor-assets/block-thumbs/obstacle-magnet-blue.png" alt="" draggable="false"><span class="cap">Specials</span></button>
+			<button class="cat-tab" data-cat="decor"><img src="editor-assets/block-thumbs/deco-forest.png" alt="" draggable="false"><span class="cap">Decor</span></button>
+			<button class="cat-tab" data-cat="tools"><img src="editor-assets/block-thumbs/cat-icon-tools.png" alt="" draggable="false"><span class="cap">Tools</span></button>
+		</div>
+		<select id="track-level-select" style="display:none" aria-label="Placement level" title="Placement level for the track buttons below">
+			<option value="ground">Ground</option>
+			<option value="elevated">Elevated</option>
+			<option value="tunnel-open">Tunnel (open top)</option>
+			<option value="tunnel-closed">Tunnel (closed top)</option>
+		</select>
+		<select id="gate-select" style="display:none" aria-label="Gate picker">
+			<option value="">Gate…</option>
+			<option value="track-start-finish">Start/Finish</option>
+			<option value="track-start">Place: Start</option>
+			<option value="track-finish">Place: Finish</option>
+		</select>
 	</div>
 
 
@@ -1058,31 +1160,20 @@ import { createShadowProxyController } from './js/ShadowProxy.js?v=3';
 	};
 	function updateTrackModeUi() {
 
-		const labelIdx = trackLevelMode === 'ground' ? 0 : trackLevelMode === 'elevated' ? 1 : 2;
-		for ( const [ btnId, labels ] of Object.entries( TRACK_MODE_LABELS ) ) {
-
-			const btn = document.getElementById( btnId );
-			if ( ! btn ) continue;
-			const cap = btn.querySelector( '.cap' );
-			if ( cap ) {
-
-				cap.textContent = labels[ labelIdx ];
-				btn.title = labels[ labelIdx ];
-
-			} else {
-
-				btn.textContent = labels[ labelIdx ];
-
-			}
-
-		}
 		const elevOnly = trackLevelMode === 'elevated';
-		for ( const id of [ 'btn-elev-cross-extra', 'btn-elev-cross-corner-extra' ] ) {
+		const tunnelMode = trackLevelMode === 'tunnel-open' || trackLevelMode === 'tunnel-closed';
+		// Elevated-only pieces (cross, slope, pool) show in the Elevated subcategory.
+		for ( const id of [ 'btn-elev-cross-extra', 'btn-elev-cross-corner-extra', 'btn-slope-up', 'btn-pool-cross' ] ) {
 
 			const btn = document.getElementById( id );
 			if ( btn ) btn.style.display = elevOnly ? '' : 'none';
 
 		}
+		const poolSlopeBtn = document.getElementById( 'btn-pool-slope' );
+		if ( poolSlopeBtn ) poolSlopeBtn.style.display = elevOnly && slopesModInstalled ? '' : 'none';
+		// Tunnel pieces live in the Tunnel subcategories.
+		const tunnelHoleBtn = document.getElementById( 'btn-tunnel-hole' );
+		if ( tunnelHoleBtn ) tunnelHoleBtn.style.display = tunnelMode ? '' : 'none';
 		// Photo tabs follow the placement level: ground models swap to their
 		// elevated renders (tunnel keeps the ground look).
 		for ( const btn of document.querySelectorAll( '#toolbar button.thumb[data-thumb]' ) ) {
@@ -1096,6 +1187,7 @@ import { createShadowProxyController } from './js/ShadowProxy.js?v=3';
 		}
 
 	}
+
 	{
 		const trackModeSelect = document.getElementById( 'track-level-select' );
 		if ( trackModeSelect ) trackModeSelect.addEventListener( 'change', () => {
@@ -5283,16 +5375,9 @@ function refreshMovingSpeedUi() {
 	function refreshModTools() {
 
 		slopesModInstalled = true;
-
-		for ( const type of ELEVATED_TYPES ) {
-
-			const btn = tileButtons[ type ];
-			if ( ! btn ) continue;
-			btn.style.display = slopesModInstalled ? '' : 'none';
-
-		}
-		const poolSlopeBtn = tileButtons[ POOL_SLOPE_TOOL ];
-		if ( poolSlopeBtn ) poolSlopeBtn.style.display = slopesModInstalled ? '' : 'none';
+		// Level-scoped visibility (elevated extras, pool pieces, tunnel hole)
+		// lives in updateTrackModeUi — let it stay the single source of truth.
+		updateTrackModeUi();
 		if ( ! slopesModInstalled && ( ELEVATED_TYPES.includes( selectedType ) || selectedType === POOL_SLOPE_TOOL ) ) selectTileType( 'track-straight' );
 
 	}
@@ -5581,19 +5666,7 @@ function refreshMovingSpeedUi() {
 	document.getElementById( 'csp-close' )?.addEventListener( 'click', closeCustomSurfaceEditor );
 	// Colors checkbox INSIDE the Custom Pool button — clicking it must not open
 	// (or re-trigger) the settings panel.
-	document.getElementById( 'cp-colors-toggle' )?.addEventListener( 'click', ( event ) => {
-		event.stopPropagation();
-		customPoolColorsEnabled = event.currentTarget.checked;
-		// Re-render every pool so the preview matches what the game will show.
-		for ( const [ key, cell ] of grid ) if ( cell.water ) { const [ gx, gz ] = key.split( ',' ).map( Number ); placeOverlayMesh( gx, gz, cell ); }
-		save();
-		// Physics are gated by this checkbox too — make the drive sim rebuild.
-		editorDrive?.markDirty?.();
-		showToast( customPoolColorsEnabled ? 'Custom pool enabled' : 'Custom pool disabled' );
-	} );
-	document.getElementById( 'btn-custom-pool' )?.addEventListener( 'click', ( event ) => {
-		if ( event.target && event.target.id === 'cp-colors-toggle' ) return;
-		document.getElementById( 'cp-colors-toggle' ).checked = customPoolColorsEnabled;
+	document.getElementById( 'btn-custom-pool' )?.addEventListener( 'click', () => {
 		document.getElementById( 'cp-drag' ).value = String( customPoolConfig.drag );
 		document.getElementById( 'cp-buoyancy' ).value = String( customPoolConfig.buoyancy );
 		document.getElementById( 'cp-water-color' ).value = customPoolConfig.waterColor;
@@ -5604,6 +5677,7 @@ function refreshMovingSpeedUi() {
 	document.getElementById( 'cp-close' )?.addEventListener( 'click', () => { customPoolPanel.hidden = true; } );
 	document.getElementById( 'cp-save' )?.addEventListener( 'click', () => {
 		pushHistorySnapshot();
+		customPoolColorsEnabled = true;
 		customPoolConfig = normalizeCustomPoolConfig( { drag: document.getElementById( 'cp-drag' ).value, buoyancy: document.getElementById( 'cp-buoyancy' ).value, waterColor: document.getElementById( 'cp-water-color' ).value, edgeColor: document.getElementById( 'cp-edge-color' ).value, transparent: document.getElementById( 'cp-transparent' ).checked } );
 		for ( const [ key, cell ] of grid ) if ( cell.water ) { const [ gx, gz ] = key.split( ',' ).map( Number ); placeOverlayMesh( gx, gz, cell ); }
 		save(); customPoolPanel.hidden = true; showToast( 'Custom pool saved' );
@@ -6571,6 +6645,58 @@ function refreshMovingSpeedUi() {
         }
     });
     rebuildQuickTools();
+})();
+
+// ═════════════════════════════════════════════════════════════════
+// FEATURE 11: Category palette — tabs open a panel above, tabs shrink
+// ═════════════════════════════════════════════════════════════════
+(function initPaletteCategories() {
+    const toolbar = document.getElementById('toolbar');
+    const tabs = document.querySelectorAll('#cat-bar button.cat-tab');
+    const panels = document.querySelectorAll('#palette-content .palette-panel');
+    const chips = document.querySelectorAll('.subcat-chip[data-level]');
+    const levelSelect = document.getElementById('track-level-select');
+    const gateSelect = document.getElementById('gate-select');
+
+    function setActivePanel(name) {
+        panels.forEach(p => { p.hidden = p.dataset.panel !== name; });
+        tabs.forEach(t => { t.classList.toggle('active', t.dataset.cat === name); });
+        if (name) toolbar.dataset.open = '1';
+        else delete toolbar.dataset.open;
+    }
+
+    tabs.forEach(t => t.addEventListener('click', (e) => {
+        e.preventDefault();
+        setActivePanel(t.classList.contains('active') ? null : t.dataset.cat);
+    }));
+
+    // Road level subcategories drive the (hidden) placement-level select,
+    // so all existing level logic — photo swaps, elevated-only pieces — runs.
+    chips.forEach(c => c.addEventListener('click', (e) => {
+        e.preventDefault();
+        chips.forEach(x => x.classList.toggle('active', x === c));
+        if (levelSelect) {
+            levelSelect.value = c.dataset.level;
+            levelSelect.dispatchEvent(new Event('change'));
+        }
+    }));
+
+    // Gate shortcut buttons drive the (hidden) gate picker.
+    for (const [id, value] of [['btn-gate-start-finish', 'track-start-finish'], ['btn-gate-start', 'track-start'], ['btn-gate-finish', 'track-finish']]) {
+        const btn = document.getElementById(id);
+        if (!btn) continue;
+        btn.addEventListener('click', () => {
+            for (const b of document.querySelectorAll('#btn-gate-start-finish, #btn-gate-start, #btn-gate-finish')) b.classList.remove('active');
+            btn.classList.add('active');
+            if (gateSelect) {
+                gateSelect.value = value;
+                gateSelect.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
+    // Default view: Roads panel with the Ground subcategory.
+    setActivePanel('roads');
 })();
 
 // ═════════════════════════════════════════════════════════════════
