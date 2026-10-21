@@ -906,7 +906,6 @@
 						<button id="btn-offgrid">Snap: Grid</button>
 						<button id="btn-rotate">Rotate: 0°</button>
 						<button id="btn-play" class="action">Play</button>
-						<button id="btn-quick-test" class="action">Quick Test</button>
 						<button id="btn-share" class="action">Share</button>
 						<button id="btn-clear" class="danger">Clear</button>
 						<button id="btn-storage-chip" type="button" title="Browser storage used by this site — click for details and cleanup">💾 <span id="storage-chip-text">…</span></button>
@@ -6066,33 +6065,6 @@ function refreshMovingSpeedUi() {
 				showToast( `Could not build share URL (${ String( error?.message || 'pack upload failed' ).slice( 0, 80 ) }).` );
 
 			}
-
-	} );
-	document.getElementById( 'btn-quick-test' ).addEventListener( 'click', async () => {
-
-		if ( getCellsArray().length === 0 ) {
-
-			showToast( 'Draw some road first!' );
-			return;
-
-		}
-		try {
-
-			const result = await createPlayableTrackUrl();
-			const testUrl = new URL( result.url, window.location.href );
-			testUrl.searchParams.set( 'editorQuickTest', '1' );
-			testUrl.searchParams.set( 'editorReturn', window.location.href.split( '?' )[ 0 ] );
-			testUrl.searchParams.set( 'editorGhostMap', `${ await encodeCellsV3( getCellsArray() ) }|${ await encodeModsV3() }` );
-			localStorage.setItem( 'racing-campaign-editor-played', '1' );
-			window.location.href = testUrl.toString();
-			if ( result.mode === 'local-pack' ) showToast( 'Opened with local pack fallback (same browser/device only).' );
-
-		} catch ( error ) {
-
-			console.warn( 'Failed to create quick test URL', error );
-			showToast( `Could not build quick test URL (${ String( error?.message || 'pack upload failed' ).slice( 0, 80 ) }).` );
-
-		}
 
 	} );
 	document.getElementById( 'btn-select-spawn' )?.addEventListener( 'click', () => {
